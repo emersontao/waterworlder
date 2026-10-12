@@ -119,7 +119,7 @@ def make_fname(x,complete=False):
     complete:   Defaults to False. Adds '_complete' string to filename.
     """
     #savefile = f'H2O_{mp/const.Mearth:.3f}Me_{teq}K_{mstar/const.Msun:.3f}Ms_{Fxuv:.3f}Fxuv'
-    
+
     str = f'saves/coarse_H2O_nobolo/{int(x[1])}/H2O_{x[0]:.3f}Me_{int(x[2])}K_{x[3].item():.3f}Ms_{x[4]:.3f}Fxuv'
     if complete:
         str = str+'_complete'
