@@ -1,6 +1,6 @@
 # Steam World Evolution interior model
 #   VERSION:        SPRING 2026
-#   LAST UPDATED:   MAY 12, 2026, DESKTOP
+#   LAST UPDATED:   OCTOBER 20, 2026
 #   UNITS:          Earth
 # https://github.com/an0wen/MARDIGRAS
 # //////////////////////////////////////// #
@@ -9,7 +9,6 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import sys
 sys.path.insert(0, './Models')
-#import iop_fint as iop
 
 #physical constants
 Ggrav = 6.67e-11 #gravitational constant m^3/kg/sec^2
@@ -26,11 +25,9 @@ au = 1.496e11 #Astronomical Unit (m)
 Gyr = 3.15e16 #Seconds in 1 Gyr
 
 #other constants
-#L_he = 4.5e-6*L_sun + 4.6e-7*L_sun #EUV + X-Ray luminosities of the Sun (W)
+L_he = 4.5e-6*L_sun + 4.6e-7*L_sun #EUV + X-Ray luminosities of the Sun (W)
 eta = 0.1 #photoevaporation efficiency constant
 sigmasb = 5.670374419e-8 # Stefan-Boltzmann constant  (W.m-2.K-4)
-
-
 
 
 #-- SWE Aguichine et al. 2025
@@ -93,15 +90,10 @@ interp_sweet = RegularGridInterpolator((sweet_dim_top,
 def radius_sweet(x,top_sweet,star_sweet,wmf_sweet,teq_sweet,age_sweet):
     """
     x: mass (M_earth)
-
     top_sweet: top of the atmosphere pressure (index [0,1] for 20 milibar, 1 microbar)
-    
     star_sweet: index [0,1] for M, G type host star
-    
     wmf_sweet: water-mass fraction
-    
     teq_sweet: equilibrium temperature (K)
-    
     age_sweet: age of planet (Gyr)
     """
     input0 = np.stack((np.full(len(x),top_sweet),
@@ -114,6 +106,7 @@ def radius_sweet(x,top_sweet,star_sweet,wmf_sweet,teq_sweet,age_sweet):
 
 #Host star is M-TYPE
 def radius_m(wmf,teq,mp,age):
+    """Earth units"""
     swerad = radius_sweet(np.array(mp).flatten(), 
                                 np.array(0), np.array(0), 
                                 np.array(wmf), np.array(teq),
@@ -122,6 +115,7 @@ def radius_m(wmf,teq,mp,age):
 
 #Host star is G-TYPE
 def radius_g(wmf,teq,mp,age):
+    """Earth units"""
     swerad = radius_sweet(np.array(mp).flatten(), 
                                 np.array(0), np.array(1), 
                                 np.array(wmf), np.array(teq),
@@ -159,7 +153,7 @@ def zeng_radius(mp,cmf):
 
 #-- WMF SOLVER
 # invert the radius_iop equation to solve for wmf
-# takes in mkgs units
+# takes in SI units
 
 #dichotomy/bisection root-finding method
 def bisection(func,a,b,precision, max_steps):
@@ -169,7 +163,6 @@ def bisection(func,a,b,precision, max_steps):
         steps += 1
 
         if abs(a - b) < precision:
-            #print(f'[BISECTION: SUCCESS]\nSteps taken = {steps} \nInterval size = { 1/(2**steps) }')
             return c
         if abs(func(c)) < precision:
             return c
@@ -178,8 +171,6 @@ def bisection(func,a,b,precision, max_steps):
         else:
             b = c
     
-    #print('ERROR: Did not converge?')
-    #print(f'[BISECTION: FAILED]\nDid not converge\nSteps taken = {steps} \nInterval size = { 1/(2**steps) }')
     return c
 
 
@@ -207,21 +198,11 @@ def solve_wmf_m(rp,teq,mp,age,precision=1e-8,max_steps=100):
     #make sure the sign changes between endpoints
     wmf_0 = objective(0)
     wmf_1 = objective(1)
-    #print(f'[SOLVE WMF]  WMF(0.0) = {wmf_0}\tWMF(1.0) = {wmf_1}')
     if wmf_0 * wmf_1 > 0:
         raise ValueError('The function does not change sign in the interval [',a,',',b,']')
     
     wmf = bisection(objective,0,1,precision,max_steps)
     
-    # #IF USING EXISTING EXOPLANET: )
-    # # check for radius
-    # calculated_rp = interp_radius_m([wmf,teq,mp,age])
-    # if rp > calculated_rp :
-    #     rp = calculated_rp
-    #     print('WARNING: Calculated radius override given radius')
-    #     wmf = bisection(objective,0,1,precision,max_steps)      #recalculate wmf
-
-    #print(f'WMF: {wmf:.4f}')
     return wmf
 
 def solve_wmf_g(rp,teq,mp,age,precision=1e-8,max_steps=100):
@@ -247,19 +228,9 @@ def solve_wmf_g(rp,teq,mp,age,precision=1e-8,max_steps=100):
     #make sure the sign changes between endpoints
     wmf_0 = objective(0)
     wmf_1 = objective(1)
-    #print(f'[SOLVE WMF]  WMF(0.0) = {wmf_0}\tWMF(1.0) = {wmf_1}')
     if wmf_0 * wmf_1 > 0:
         raise ValueError('The function does not change sign in the interval [0, 1]')
     
     wmf = bisection(objective,0,1,precision,max_steps)
     
-    # #IF USING EXISTING EXOPLANET:
-    # # check for radius
-    # calculated_rp = interp_radius_m([wmf,teq,mp,age])
-    # if rp > calculated_rp :
-    #     rp = calculated_rp
-    #     print('WARNING: Calculated radius override given radius')
-    #     wmf = bisection(objective,0,1,precision,max_steps)      #recalculate wmf
-
-    #print(f'WMF: {wmf:.4f}')
     return wmf
