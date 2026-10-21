@@ -30,13 +30,21 @@ sigma_sb = 5.670374419e-8 #W⋅m−2⋅K−4 ; Stefan-Boltzmann constant
 def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, time_end=5*Gyr,):
     """
     mp:         planet mass
+
     rp:         planet radius
+    
     teq:        equilibrium temperature of planet (K)
+    
     a:          semi-major axis between planet and host star
+    
     mstar:      stellar mass
+    
     lstar:      stellar luminosity
+    
     H2O:        True: Evolve with water mass-loss rates. False: Evolve with OW17 mass-loss rates. 
+    
     time_init:  Age of system at simulation start (s). Default: 10 Myr / 1e-3 Gyr
+    
     time_end:   Total duration of evolution (s). Default: 5 Gyr
 
     Takes in SI units.
@@ -183,9 +191,14 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
 def planet_generator(n_planets, savepath, params_path='/generator_params.json', printtable=False):
     """
     n_planets:   number of planets to generate
+
     savepath:    directory that a new directory named '{n_planets}_xp' will be created in and filled with planet info
+    
     params_path: loads the generator_params.json file that allows for customization of some generated values. default: '/generator_params.json'
+    
     printtable:  print table displaying generated values. Default: False
+
+    Generates a .csv file with randomized parameters for n_planets
     """
     #Load in parameters
     with open(params_path, "r") as file:
@@ -332,7 +345,90 @@ def planet_generator(n_planets, savepath, params_path='/generator_params.json', 
     print(f'{n_planets} generated.\n')
 
 
-### Important functions
+
+### Functions for running in parallel
+
+#Define complete evolution code for generated population
+def parallel_evo(n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,savepath='./',H2O=True):
+    '''
+    n_planets: Number of planets, int
+
+    planet_ID: planet (out of n_planets), int
+
+    mp:        planet mass (kg)
+
+    rp:        planet radius (m)
+    
+    teq:       equilibrium temperature (K)
+    
+    wmf:       water-mass fraction [0,1]
+    
+    a:         semi-major axis (m)
+    
+    mstar:     stellar mass (kg)
+    
+    lstar:     stellar luminosity (W)
+    
+    savepath:  directory that will have folder 'H2O' or 'H_He' created to store evolution tracks. str
+    
+    H2O:       True: evolve with water mass-loss rates. False: Evolve with H-He mass-loss rates. boolean
+    '''
+    ### Save data
+    # <--------------------------- !!! Likely will end up putting the folder-maker in xp_evolution. Here for now, it should work
+    if H2O:
+
+        #create folder to save evolution data
+        savefolder='H2O'
+        location = savepath+f'{n_planets}_xp/'+savefolder
+        try:
+            os.mkdir(location)
+            print(f"Directory '{savefolder}' created successfully in {savepath}.")
+        except FileExistsError:
+            print(f"Directory '{savefolder}' already exists in {savepath}. WARNING: Data in this folder will be overwritten.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr = evolution(mp,rp,teq,wmf,a,mstar,lstar,True)
+
+        #Save planet evolution data
+        planet_filename = f'planet_{int(planet_ID)}-{int(n_planets)}_evolution_data.csv'
+        path = savepath + '/' + planet_filename
+        np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr], fmt='%.5e', delimiter='\t')
+
+    else:
+        #H2-He evolution
+        savefolder='H_He'
+        location = savepath+f'{n_planets}_xp/'+savefolder
+        try:
+            os.mkdir(location)
+            print(f"Directory '{savefolder}' created successfully in {savepath}.")
+        except FileExistsError:
+            print(f"Directory '{savefolder}' already exists in {savepath}. WARNING: Data in this folder will be overwritten.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        #run evolution
+        time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr = evolution(mp,rp,teq,wmf,a,mstar,lstar,False)
+
+        #Save planet evolution data
+        planet_filename = f'planet_{int(planet_ID)}-{int(n_planets)}_evolution_data.csv'
+        path = savepath + planet_filename
+        header = f"Planet #{planet_ID} Time [s]\tM_p [kg]\tR_p [m]\tWMF\tF_xuv [W/m^2]\tMdot [kg/s]\tError"
+        np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr], fmt='%.5e', delimiter='\t')
+
+        
+    return time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr
+
+
+
+def parallel_evo_wrapper(param):
+    return parallel_evo(*param)
+
+
+
+
+
+### Important OW17 Mass-loss functions
 def efficiency(mp,rp,mstar,sep):
     """
     Efficiency of photoevaporative atmospheriv H-He mass-loss.
@@ -380,13 +476,15 @@ def mdot_OW17(mstar,fxuv,mp,rp,a):
     SI inputs
     '''
     eta = efficiency(mp,rp,mstar,a)
-    mdot = eta * np.pi * (fxuv*rp) / (G*mp)
+    mdot = eta * np.pi * (fxuv*rp) / (G*mp) #kg/s
     return mdot
 
 
 
-###useful for generator
 
+
+
+###useful for generator
 #planet period
 def period_solver(mstar,lstar,teq):
     a = (lstar / (16 * np.pi * sigma_sb * teq**4))**(3/2)
