@@ -1,125 +1,66 @@
-# Evolution model for atmospheric escape of water from sub-Neptune steam atmospheres
-#   Generates randomized planet populations
-#   Optimized for multiprocessing
-# 
-#   VERSION:        SUMMER 2026
-#   LAST UPDATED:   JUNE 17 2026, KAMA (now runs both atm)
-#   ATMOSPHERE:     Broome et al. 2025 [H2O] & Owen & Wu 2017 [H-He]
-#   INTERIOR:       Aguichine et al. 2025
-#   UNITS:          MKS
-# //////////////////////////////////////// #
-
+#  xp_evo.py
 import sys, time, os 
 sys.path.insert(0, './Models')
+import argparse
 
 # Replace all 'multiprocessing' with 'multiprocess' on macos 
 import multiprocess
 from multiprocess import Pool
-
 import numpy as np
-import xpml #type:ignore
-import xpml_HHe #type: ignore
-import plot_module #type: ignore
+import xpml, plot_module
 
-#Check CPU count
 cpu_ct = multiprocess.cpu_count()
-cores = cpu_ct/2    #Manually set number of cores or use all
+
+arg = argparse.ArgumentParser()
+arg.add_argument('-c', '--cores',     default=int(cpu_ct/2), type=int, action='store', help='Number of PCU cores to run for multiprocessing')
+arg.add_argument('-s', '--savepath',  default='data/',       type=str, action='store', help='Directory to create data folders in')
+arg.add_argument('-n', '--n_planets', default=int(5000),     type=int, action='store', help='Number of planets to generate')
+arg.add_argument('-m', '--mdot_type', default='H2O',         type=str, action='store', help='Mass-loss escape type')
+arg.add_argument('-g', '--generate',  default=True,          type=bool,action='store', help='Generate new population or not')
+
+args = arg.parse_args()
+cores = args.cores
+savepath = args.savepath
+n_planets = args.n_planets
+mdot_type = args.mdot_type
+generate = args.generate
+
 print(f'\nCores in use: {cores}/{cpu_ct}')
 
-# //////////////////////////////////////// #
-# RETRIEVE PLANETS
-#   Planets can either be generated or imported.
-#   Comment the code to whichever you will not use.
-#   Output Units: MKS
+t_0 = time.time()
 
-#-- IMPORT planet population
-#from XPML generated population (gp):
-# n_planets = 200
-# loadin_path = './evolution-data/paper/5000_xp/5000_xp_gp_data.csv'
-# planetnum, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, sep_gp, period_gp, startype_gp, mstar_gp, lstar_gp, fxuv_gp = np.loadtxt(loadin_path,skiprows=(1), unpack=True)
-
-# #from NEA: not gp but wtv
-# filename = 'PS_2025.07.16_21.12.59.csv'
-# planetnum, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, sep_gp, period_gp, startype_gp, mstar_gp, lstar_gp = xpml.nea_reformatter(filename)
-# n_planets = len(planetnum)
-# # print('Hooray!')
-# # print(n_planets)
-# # exit()
-
-#-- GENERATE planet population
-n_planets = 10
-savepath="paper/"
-mdot_type="H2O"
-planetnum, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, sep_gp, period_gp, startype_gp, mstar_gp, lstar_gp, fxuv_gp = xpml.planet_generator(n_planets, savepath)
-
-savefolder=f'{n_planets}_xp/'+mdot_type+'/'
+savefolder=f'{savepath}/{n_planets}_xp/{mdot_type}/'
 try:
-    os.mkdir(savepath+savefolder)
-    print(f"Directory '{savefolder}' created successfully in {savepath}.")
+    os.mkdir(savefolder)
+    print(f"Directory '{savefolder}' created successfully in {os.getcwd()}.")
 except FileExistsError:
-    print(f"Directory '{savefolder}' already exists in {savepath}. WARNING: Data in this folder may be overwritten.")
+    print(f"Directory '{savefolder}' already exists in {os.getcwd()}. WARNING: Data in this folder will be overwritten.")
 except Exception as e:
     print(f"An error occurred: {e}")
 
-# exit()
-# //////////////////////////////////////// #
-# SIMULATE PLANETS
-t_0 = time.time()
+
+# n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,savepath='./',H2O=True
+if generate is True:
+    xpml.planet_generator(n_planets, savepath)
+
+#Either way, load ts in
+ids, mp, rp, teq, wmf, a, mstar, lstar = np.loadtxt(f'{savepath}/{n_planets}_xp/5000_xp_gp_data.csv', 
+                                                    delimiter='\t', skiprows=1, usecols=[0,1,2,5,6,10,13,14], unpack=True)
+
+params = [(n_planets, ids[i], mp[i], rp[i], teq[i], wmf[i], a[i], mstar[i], lstar[i], mdot_type, savepath) for i in range(n_planets)]
+
+
 print('\n Simulating evolution...')
+# n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,savepath='./',H2O=True
+with Pool(processes=cores) as pool:
+    pool.map(xpml.gp_xpmlevo(*params))
 
-#Define complete evolution code for generated population
-def gp_xpmlevo(planetnum,mp,rp,teq,wmf,sep,mstar,lstar):
-
-    #Run XPML
-    # time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr = xpml_HHe.evolution(mp,rp,teq,wmf,sep,mstar,lstar)
-
-    # Save planet evolution data
-    # -- Generated Planets
-    planet_filename = f'planet_{int(planetnum)}-{int(n_planets)}_evolution_data.csv'
-    # path = f'evolution-data/paper/{n_planets}_xp/H-He/{planet_filename}'
-    # np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr], fmt='%.5e', delimiter='\t')
-
-
-    #-- run for H2O
-    time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr = xpml.evolution(mp,rp,teq,wmf,sep,mstar,lstar, mdot_type)
-
-    path = savepath+f'{n_planets}_xp/'+mdot_type+'/'+planet_filename
-
-
-    # #-- NEA Planets
-    # '''planet_filename = f'planet_{planetnum}-{n_planets}_evolution_data.csv'
-    # path = f'evolution-data/real-evo/nea/{n_planets}_xp_{filename}/{planet_filename}' '''
-
-    np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr], fmt='%.5e', delimiter='\t') #,error_arr
-    #error_arr
-    return time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr
-
-
-
-# //////////////////////////////////////// #
-# OPTIMIZE AND RUN ON MULTIPLE CORES
-def xpmlevo_wrapper(param):
-    return gp_xpmlevo(*param)
-
-#input list of lists per planet
-param_xpmlevo = [(planetnum[i], mp_gp[i], rp_gp[i], teq_gp[i], wmf_gp[i], sep_gp[i], mstar_gp[i], lstar_gp[i]) for i in range(n_planets)]
-
-#-- RUN ON MULTIPLE CORES
-# Default number of cores: all
-with multiprocess.Pool(processes=cpu_ct) as pool:
-    xpmlevo_results = pool.map(xpmlevo_wrapper, param_xpmlevo)
-
-# Display runtime
 t_f = time.time()
 t = t_f - t_0
 t_mins = t/60
+print('Evolution duration:', t_mins, "minutes")
 print(f'\n Evolution complete. Fish of celebration -> <*))))<<\nPlotting...')
 
-
-#now let's make some PLOTS, baby!
-# plot_module.run(n_planets, mdot_type="H2O", datapath=savepath, plotkde=False, planets_plotted=10)
-
+#Plot_module is NOT UPDATED
 plot_module.trails_one(n_planets,n_planets,identifier="",datapath=savepath+savefolder)
-
-print(f"\n Plotting complete. oh my god look it's a snail family!!! -> Y_@_ Y@_ v@_\n")
-print(f'\n Total Elapsed: {t:.2f} s  |  {t_mins:.2f} minutes\n')
+print("Plots finished")

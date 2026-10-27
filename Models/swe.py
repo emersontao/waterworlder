@@ -109,8 +109,8 @@ def radius_m(wmf,teq,mp,age):
     """Earth units"""
     swerad = radius_sweet(np.array(mp).flatten(), 
                                 np.array(0), np.array(0), 
-                                np.array(wmf), np.array(teq),
-                                np.array(age))
+                                np.array(wmf).flatten(), np.array(teq).flatten(),
+                                np.array(age).flatten())
     return swerad
 
 #Host star is G-TYPE
@@ -118,8 +118,8 @@ def radius_g(wmf,teq,mp,age):
     """Earth units"""
     swerad = radius_sweet(np.array(mp).flatten(), 
                                 np.array(0), np.array(1), 
-                                np.array(wmf), np.array(teq),
-                                np.array(age))
+                                np.array(wmf).flatten(), np.array(teq).flatten(),
+                                np.array(age).flatten())
     return swerad
 
 

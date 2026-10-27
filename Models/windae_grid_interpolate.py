@@ -1,5 +1,6 @@
 #code by Artem, Nov. 10 2025
 #comments pruned by Emerson, Oct. 20 2026
+# Edited by Emerson OCt 26 2026
 import numpy as np 
 import pandas as pd
 # import matplotlib.pyplot as plt
@@ -8,15 +9,16 @@ from scipy.interpolate import RegularGridInterpolator
 
 # Read the file
 # file = "windae_nobolo_static_all.dat"
-file = "Models/windae_grids/windae_nobolo_static_110325.dat"
-df = pd.read_csv(file,sep="\t",header=27)
+file = "Models/windae_grids/windae_grid_H2O_4.csv"
+df = pd.read_csv(file,sep="\t ")
 
+print(df.keys())
 # Simple error handling method: the errorcode is the sum of all errors
-df["error"] = np.abs(df["ramp_to"])+np.abs(df["run_wind"])+np.abs(df["rochelim"])
+df["error"] = np.abs(df["flag_roche"])+np.abs(df["flag_exception"])+np.abs(df["flag_ramp_to"])+np.abs(df["flag_run_wind"])+np.abs(df["flag_timeout"])
 
 # Easier for the interpolator: sort all input in scending order
-list_labels = ['mstar', 'Teq', 'Fxuv', 'grav', 'Mp']
-df = df.sort_values(by=['mstar', 'Teq', 'Fxuv', 'grav', 'Mp'])
+list_labels = ['Mstar', 'Teq', 'Fxuv', 'grav', 'Mp']
+df = df.sort_values(by=['Mstar', 'Teq', 'Fxuv', 'grav', 'Mp'])
 
 # Extracting axes
 axis_all = [np.unique(df[c]) for c in list_labels]
@@ -28,7 +30,6 @@ dim_product = np.prod(dim_all).item()
 # Getting values
 mdot_values = df['Mdot'].to_numpy().reshape(dim_all)
 error_values = df['error'].to_numpy().reshape(dim_all)
-
 
 
 # fill_value=None means values can be extrapolated

@@ -27,7 +27,7 @@ sigma_sb = 5.670374419e-8 #W⋅m−2⋅K−4 ; Stefan-Boltzmann constant
 
 
 
-def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, time_end=5*Gyr,):
+def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, time_end=5*Gyr):
     """
     mp:         planet mass
 
@@ -85,8 +85,8 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
         def solve_mdot(mstar,teq,fxuv,mp,rp,a):
             return mdot_OW17(mstar,fxuv,mp,rp,a)
         def error(mstar,teq,fxuv,mp):
-             return np.nan
-             
+            return np.nan
+
     #Time inputs
     dt = 1e-4 * Gyr         #timestep
     dt_save = 1e-3 * Gyr    #timestep saving age
@@ -159,8 +159,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
         time_since_last_save += dt
 
         if any(x <= 0 for x in [mp, rp, mdot]):
-            #This should NOT happen.
-            print("WARNING: Evolution terminated. 0 in mp, rp, or mdot.")
+            # print("WARNING: Evolution terminated. 0 in mp, rp, or mdot.")
             break
 
         if time_since_last_save >= dt_save:
@@ -188,7 +187,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
 
 
 
-def planet_generator(n_planets, savepath, params_path='/generator_params.json', printtable=False):
+def planet_generator(n_planets, savepath, params_path='Models/generator_params.json', printtable=False):
     """
     n_planets:   number of planets to generate
 
@@ -222,7 +221,7 @@ def planet_generator(n_planets, savepath, params_path='/generator_params.json', 
     G_startypes = mstar_gp/M_sun > mstar_cutoff #Boolean mask
 
     #empty lists for now
-    rp_gp = []#np.array([])                                #m
+    rp_gp    = []#np.array([])                             #m
     mcore_gp = []#np.array([])                             #M_e
     rsurf_gp = []#np.array([])                             #R_e
     lstar_gp = []#np.array([])                             #W
@@ -243,12 +242,12 @@ def planet_generator(n_planets, savepath, params_path='/generator_params.json', 
         G_star = G_startypes[p]
 
         if G_star:
-            lstar = 0.23 * L_sun * (mstar_gp[p] / M_sun)**2.3
-            rp = swe.radius_m(wmf_gp[p],teq_gp[p],mp_gp[p]/M_e,age_init)*R_e #m
+            lstar = L_sun * (mstar_gp[p] / M_sun)**4
+            rp = swe.radius_g(wmf_gp[p],teq_gp[p],mp_gp[p]/M_e,age_init/Gyr)*R_e #m
         else:
             # Host star is G-TYPE
-            lstar = L_sun * (mstar_gp[p] / M_sun)**4
-            rp = swe.radius_g(wmf_gp[p],teq_gp[p],mp_gp[p]/M_e,age_init)*R_e #m
+            lstar = 0.23 * L_sun * (mstar_gp[p] / M_sun)**2.3
+            rp = swe.radius_m(wmf_gp[p],teq_gp[p],mp_gp[p]/M_e,age_init/Gyr)*R_e #m
 
         rp_gp.append(rp)
         lstar_gp.append(lstar)
@@ -257,7 +256,7 @@ def planet_generator(n_planets, savepath, params_path='/generator_params.json', 
     rp_gp = np.array(rp_gp)
     mcore_gp  = np.array(mcore_gp)
     rsurf_gp  = np.array(rsurf_gp)
-    period_gp = np.array(period_gp)
+    lstar_gp  = np.array(lstar_gp)
 
     #additional arrays
     H_gp = scaleheight(teq_gp, rp_gp, mp_gp)    #initial scaleheight of atmosphere
@@ -287,15 +286,19 @@ def planet_generator(n_planets, savepath, params_path='/generator_params.json', 
     #BE EXTRA CAREFUL MODIFYING THESE
     header     = f'Planet/{n_planets}\tMp (kg)\tRp (m)\tCore M (kg)\tSurface Radius (m)\tTeq (K)\tWMF\tgravity(m/s^2)\tscale height (m)\tlambda\tsep (m)\tperiod (days)\tG-Star Type\tMstar (kg)\tLstar (W)\tFxuv (W/m^2)'
     header_e   = f'Planet/{n_planets}\tMp (Me)\tRp (Re)\tCore M (Me)\tSurface Radius (Re)\tTeq (K)\tWMF\tgravity(m/s^2)\tscale height (m)\tlambda\tsep (au)\tperiod (days)\tG-Star Type\tMstar (Msun)\tLstar (Lsun)\tFxuv (Fuv_e)'
-    formats    = ['%d','%.5e','%.5e','%.5e','%.5e','%.3f','%.5e','%.5e','%.3f','%.1f','%.5e','%.5f','%i','%.5e','%.5e','%.5e']
-    formats_e  = ['%d','%.5f','%.5f','%.5f','%.5f','%.3f','%.5f','%.5f','%.3f','%.1f','%.5f','%.3f','%i','%.5f','%.5f','%.5f']
+    formats    = '%.5e'
+    formats_e  = '%.5f'
+    
+    # formats    = ['%i', '%.5e', '%.5e', '%.5e', '%.5e', '%.3f', '%.5e', '%.5e', '%.3f', '%.1f', '%.5e', '%.5f', '%i', '%.5e', '%.5e', '%.5e']
+    # formats_e  = ['%i', '%.5f', '%.5f', '%.5f', '%.5f', '%.3f', '%.5f', '%.5f', '%.3f', '%.1f', '%.5f', '%.3f', '%i', '%.5f', '%.5f', '%.5f']
     filename   = f'{n_planets}_xp_gp_data.csv'
     filename_e = f'{n_planets}_xp_gp_data_unitEarth.csv'
 
+
     #save in SI units
     np.savetxt(f'{location}/{filename}', \
-               np.c_[ids, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, \
-                     sep_gp, period_gp, G_startypes, mstar_gp, lstar_gp, fxuv_gp], \
+               np.c_[ids, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp,
+                     sep_gp, period_gp, G_startypes, mstar_gp, lstar_gp, fxuv_gp], 
                fmt=formats, delimiter='\t', header=header) 
     print(f'{filename} written to {location}.')
     
@@ -343,13 +346,15 @@ def planet_generator(n_planets, savepath, params_path='/generator_params.json', 
         print(gp_table)
 
     print(f'{n_planets} generated.\n')
+    data = np.column_stack((ids, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, sep_gp, period_gp, G_startypes, mstar_gp, lstar_gp, fxuv_gp))
+    return data
 
 
 
 ### Functions for running in parallel
 
 #Define complete evolution code for generated population
-def parallel_evo(n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,savepath='./',H2O=True):
+def parallel_evo(n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,datapath='./',H2O=True):
     '''
     n_planets: Number of planets, int
 
@@ -379,51 +384,59 @@ def parallel_evo(n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,savepath='./',H
 
         #create folder to save evolution data
         savefolder='H2O'
-        location = savepath+f'{n_planets}_xp/'+savefolder
+        location = datapath+f'{n_planets}_xp/'+savefolder
         try:
             os.mkdir(location)
-            print(f"Directory '{savefolder}' created successfully in {savepath}.")
+            print(f"Directory '{savefolder}' created successfully in {datapath}.")
         except FileExistsError:
-            print(f"Directory '{savefolder}' already exists in {savepath}. WARNING: Data in this folder will be overwritten.")
+            lalalala=0 #something to just fill this space for now instead of printing
+            # print(f"Directory '{savefolder}' already exists in {datapath}. WARNING: Data in this folder will be overwritten.")
         except Exception as e:
             print(f"An error occurred: {e}")
 
         time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr = evolution(mp,rp,teq,wmf,a,mstar,lstar,True)
 
-        #Save planet evolution data
-        planet_filename = f'planet_{int(planet_ID)}-{int(n_planets)}_evolution_data.csv'
-        path = savepath + '/' + planet_filename
-        np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr, error_arr], fmt='%.5e', delimiter='\t')
-
     else:
         #H2-He evolution
         savefolder='H_He'
-        location = savepath+f'{n_planets}_xp/'+savefolder
+        location = datapath+f'{n_planets}_xp/'+savefolder
         try:
             os.mkdir(location)
-            print(f"Directory '{savefolder}' created successfully in {savepath}.")
+            # print(f"Directory '{savefolder}' created successfully in {datapath}.")
         except FileExistsError:
-            print(f"Directory '{savefolder}' already exists in {savepath}. WARNING: Data in this folder will be overwritten.")
+            lalalala=0 #something to just fill this space for now instead of printing
+            # print(f"Directory '{savefolder}' already exists in {datapath}. WARNING: Data in this folder will be overwritten.")
         except Exception as e:
             print(f"An error occurred: {e}")
 
         #run evolution
         time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr = evolution(mp,rp,teq,wmf,a,mstar,lstar,False)
-
-        #Save planet evolution data
-        planet_filename = f'planet_{int(planet_ID)}-{int(n_planets)}_evolution_data.csv'
-        path = savepath + planet_filename
-        header = f"Planet #{planet_ID} Time [s]\tM_p [kg]\tR_p [m]\tWMF\tF_xuv [W/m^2]\tMdot [kg/s]\tError"
-        np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr], fmt='%.5e', delimiter='\t')
-
         
     return time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr
 
 
 
-def parallel_evo_wrapper(param):
-    return parallel_evo(*param)
+# def parallel_evo_wrapper(param):
+#     return parallel_evo(*param)
 
+
+#Define complete evolution code for generated population
+def gp_xpmlevo(n_planets, planetnum,mp,rp,teq,wmf,sep,mstar,lstar,mdot_type,savepath):
+
+    if mdot_type is True:
+        ident='H2O'
+    else:
+        ident='HHe'
+
+    #run evolution
+    time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr = evolution(mp,rp,teq,wmf,sep,mstar,lstar, mdot_type)
+
+    #save
+    planet_filename = f'planet_{int(planetnum)}-{int(n_planets)}_evolution_data.csv'
+    path = savepath+f'{n_planets}_xp/'+ident+'/'+planet_filename
+    np.savetxt(path, np.c_[time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr], fmt='%.5e', delimiter='\t')
+
+    return time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr
 
 
 
