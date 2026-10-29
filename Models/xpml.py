@@ -76,10 +76,10 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
     if H2O:
         def solve_mdot(mstar,teq,fxuv,mp,rp,a):
             grav = (mp * G)/rp**2
-            return wgi.mdot(mstar,teq,fxuv,grav,mp)
+            return wgi.mdot(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)
 
         def error(mstar,teq,fxuv,mp):
-            return wgi.error(mstar, teq, fxuv, grav, mp)
+            return wgi.error(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)
 
     else:
         def solve_mdot(mstar,teq,fxuv,mp,rp,a):
@@ -99,7 +99,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
 
     #starting planet params
     age  = time_init         #set age to initial time
-    fxuv = Fxuv(age, lstar, a)
+    fxuv = Fxuv(age, lstar, a) # all inputs and outputs SI
     mdot = solve_mdot(mstar,teq,fxuv,mp,rp,a) #calculate first mass-loss rate, just in case
     err = error(mstar,teq,fxuv,mp)
 
@@ -479,7 +479,7 @@ def Lxuv(age,lstar):
 
 def Fxuv(age, lstar, a):
     # SI units
-    return Lxuv(age, lstar)*1000/(4*np.pi*a**2)
+    return Lxuv(age, lstar)/(4*np.pi*a**2)
 
 
 def mdot_OW17(mstar,fxuv,mp,rp,a):
@@ -487,9 +487,10 @@ def mdot_OW17(mstar,fxuv,mp,rp,a):
     Owen & Wu 2017, Equation #19 equivalent
     Adapted for wind-ae inputs
     SI inputs
+    SI outputs
     '''
     eta = efficiency(mp,rp,mstar,a)
-    mdot = eta * np.pi * (fxuv*rp) / (G*mp) #kg/s
+    mdot = eta * np.pi * (fxuv*rp**3) / (G*mp) #kg/s
     return mdot
 
 

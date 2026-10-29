@@ -9,8 +9,13 @@ from scipy.interpolate import RegularGridInterpolator
 
 # Read the file
 # file = "windae_nobolo_static_all.dat"
-file = "Models/windae_grids/windae_grid_H2O_4.csv"
-df = pd.read_csv(file,sep="\t ")
+file = "Models/windae_grids/windae_grid_H2O.csv"
+df = pd.read_csv(file,sep="\t")
+
+# When pandas parses the "names" line
+# it gets a bunch of spaces that end up in the keys
+# so we remove them
+df.columns = df.columns.str.strip()
 
 print(df.keys())
 # Simple error handling method: the errorcode is the sum of all errors
@@ -59,6 +64,11 @@ rgi_error_log = RegularGridInterpolator(points=[np.log10(axis) for axis in axis_
                                   bounds_error=False, fill_value=20)
 
 #'mstar', 'Teq', 'Fxuv', 'grav', 'Mp'
+# ms is in sun units
+# teq is in K
+# fxuv is in Earth units (4.666 erg/cm^2/s or 4.666e-3 J/m^2/s)
+# grav is in SI (m/s^2)
+# mp is in Earth units
 def mdot(ms,teq,fxuv,grav,mp):
     ms = (ms).flatten()[0]
     teq = (teq).flatten()[0]

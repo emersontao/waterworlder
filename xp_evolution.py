@@ -44,6 +44,7 @@ if generate is True:
     xpml.planet_generator(n_planets, savepath)
 
 #Either way, load ts in
+# all numbers are in SI units
 ids, mp, rp, teq, wmf, a, mstar, lstar = np.loadtxt(f'{savepath}/{n_planets}_xp/5000_xp_gp_data.csv', 
                                                     delimiter='\t', skiprows=1, usecols=[0,1,2,5,6,10,13,14], unpack=True)
 
