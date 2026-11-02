@@ -26,7 +26,7 @@ list_labels = ['Mstar', 'Teq', 'Fxuv', 'grav', 'Mp']
 df = df.sort_values(by=['Mstar', 'Teq', 'Fxuv', 'grav', 'Mp'])
 
 # Extracting axes
-axis_all = [np.unique(df[c]) for c in list_labels]
+axis_all = [np.unique(df[c].to_numpy()) for c in list_labels]
 
 # Getting dimension sizes
 dim_all = [len(axis) for axis in axis_all]
