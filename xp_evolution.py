@@ -45,7 +45,7 @@ if generate is True:
 
 #Either way, load ts in
 # all numbers are in SI units
-ids, mp, rp, teq, wmf, a, mstar, lstar = np.loadtxt(f'{savepath}/{n_planets}_xp/5000_xp_gp_data.csv', 
+ids, mp, rp, teq, wmf, a, mstar, lstar = np.loadtxt(f'{savepath}/{n_planets}_xp/{n_planets}_xp_gp_data.csv', 
                                                     delimiter='\t', skiprows=1, usecols=[0,1,2,5,6,10,13,14], unpack=True)
 
 params = [(n_planets, ids[i], mp[i], rp[i], teq[i], wmf[i], a[i], mstar[i], lstar[i], mdot_type, savepath) for i in range(n_planets)]

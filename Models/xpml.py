@@ -220,11 +220,11 @@ def planet_generator(n_planets, savepath, params_path='Models/generator_params.j
 
     G_startypes = mstar_gp/M_sun > mstar_cutoff #Boolean mask
 
-    #empty lists for now
-    rp_gp    = []#np.array([])                             #m
-    mcore_gp = []#np.array([])                             #M_e
-    rsurf_gp = []#np.array([])                             #R_e
-    lstar_gp = []#np.array([])                             #W
+
+    rp_gp    = []                             #m
+    mcore_gp = []                             #M_e
+    rsurf_gp = []                             #R_e
+    lstar_gp = []                             #W
 
 
     #Loop to load arrays with info
@@ -381,7 +381,6 @@ def parallel_evo(n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,datapath='./',H
     ### Save data
     # <--------------------------- !!! Likely will end up putting the folder-maker in xp_evolution. Here for now, it should work
     if H2O:
-
         #create folder to save evolution data
         savefolder='H2O'
         location = datapath+f'{n_planets}_xp/'+savefolder
