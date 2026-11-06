@@ -29,17 +29,17 @@ sigma_sb = 5.670374419e-8 #W⋅m−2⋅K−4 ; Stefan-Boltzmann constant
 
 def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, time_end=5*Gyr):
     """
-    mp:         planet mass
+    mp:         planet mass (kg)
 
-    rp:         planet radius
+    rp:         planet radius (m)
     
     teq:        equilibrium temperature of planet (K)
     
-    a:          semi-major axis between planet and host star
+    a:          semi-major axis between planet and host star (m)
     
-    mstar:      stellar mass
+    mstar:      stellar mass (kg)
     
-    lstar:      stellar luminosity
+    lstar:      stellar luminosity (W)
     
     H2O:        True: Evolve with water mass-loss rates. False: Evolve with OW17 mass-loss rates. 
     
@@ -62,7 +62,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
                                               np.array(0), np.array(0), 
                                               np.array(wmf), np.array(teq),
                                               np.array(age/Gyr))
-                    return swerad * R_e
+                    return float(swerad[0]) * R_e
     else:
         #G-type host
         def radius(wmf,teq,mp,age):
@@ -70,16 +70,16 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
                                         np.array(0), np.array(1), 
                                         np.array(wmf), np.array(teq),
                                         np.array(age/Gyr))
-            return swerad * R_e
+            return float(swerad[0]) * R_e
 
     #Create mass-loss wrapper
-    if H2O:
+    if H2O==True:
         def solve_mdot(mstar,teq,fxuv,mp,rp,a):
             grav = (mp * G)/rp**2
-            return wgi.mdot(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)
+            return float(wgi.mdot(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)[0])
 
         def error(mstar,teq,fxuv,mp):
-            return wgi.error(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)
+            return float(wgi.error(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)[0])
 
     else:
         def solve_mdot(mstar,teq,fxuv,mp,rp,a):
@@ -113,13 +113,13 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
     err_saved  = []
 
     #save starting values
-    time_saved.append(age)
-    mp_saved.append(mp)
-    rp_saved.append(rp)
-    wmf_saved.append(wmf)
-    fxuv_saved.append(fxuv)
-    mdot_saved.append(mdot)
-    err_saved.append(err)
+    time_saved.append(float(age))
+    mp_saved.append(float(mp))
+    rp_saved.append(float(rp))
+    wmf_saved.append(float(wmf))
+    fxuv_saved.append(float(fxuv))
+    mdot_saved.append(float(mdot))
+    err_saved.append(float(err))
     
 
     while age < time_end:
@@ -163,24 +163,24 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
             break
 
         if time_since_last_save >= dt_save:
-            time_saved.append(age)
-            mp_saved.append(mp)
-            rp_saved.append(rp)
-            wmf_saved.append(wmf)
-            fxuv_saved.append(fxuv)
-            mdot_saved.append(mdot)
-            err_saved.append(err)
+            time_saved.append(float(age))
+            mp_saved.append(float(mp))
+            rp_saved.append(float(rp))
+            wmf_saved.append(float(wmf))
+            fxuv_saved.append(float(fxuv))
+            mdot_saved.append(float(mdot))
+            err_saved.append(float(err))
 
             time_since_last_save=0
 
     #save the last points
-    time_saved.append(age)
-    mp_saved.append(mp)
-    rp_saved.append(rp)
-    wmf_saved.append(wmf)
-    fxuv_saved.append(fxuv)
-    mdot_saved.append(mdot)
-    err_saved.append(err)
+    time_saved.append(float(age))
+    mp_saved.append(float(mp))
+    rp_saved.append(float(rp))
+    wmf_saved.append(float(wmf))
+    fxuv_saved.append(float(fxuv))
+    mdot_saved.append(float(mdot))
+    err_saved.append(float(err))
 
     return np.array(time_saved), np.array(mp_saved), np.array(rp_saved), np.array(wmf_saved), np.array(fxuv_saved), np.array(mdot_saved), np.array(err_saved)
 
@@ -266,8 +266,6 @@ def planet_generator(n_planets, savepath, params_path='Models/generator_params.j
     fxuv_gp   = Fxuv(age_init, lstar_gp, sep_gp)
     period_gp = period_solver(mstar_gp, lstar_gp, teq_gp) #days
 
-    print(f'\n{n_planets} planets generated.')
-
     ### Save data
     #create folder to save evolution data
     savefolder=f'{n_planets}_xp'
@@ -302,12 +300,12 @@ def planet_generator(n_planets, savepath, params_path='Models/generator_params.j
                fmt=formats, delimiter='\t', header=header) 
     print(f'{filename} written to {location}.')
     
-    #and in Earth/astronomical units:    
-    np.savetxt(f'{location}/{filename_e}', \
-               np.c_[ids, mp_gp/M_e, rp_gp/R_e, mcore_gp/M_e, rsurf_gp/R_e, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, \
-                     sep_gp/au, period_gp, G_startypes, mstar_gp/M_sun, lstar_gp/L_sun, fxuv_gp/Fuv_e], \
-               fmt=formats_e, delimiter='\t', header=header_e)
-    print(f'{filename_e} written to {location}.')
+    # #and in Earth/astronomical units:    
+    # np.savetxt(f'{location}/{filename_e}', \
+    #            np.c_[ids, mp_gp/M_e, rp_gp/R_e, mcore_gp/M_e, rsurf_gp/R_e, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, \
+    #                  sep_gp/au, period_gp, G_startypes, mstar_gp/M_sun, lstar_gp/L_sun, fxuv_gp/Fuv_e], \
+    #            fmt=formats_e, delimiter='\t', header=header_e)
+    # print(f'{filename_e} written to {location}.')
 
     if printtable == True:
         # Display planet info (using most intuitive units)
@@ -345,7 +343,7 @@ def planet_generator(n_planets, savepath, params_path='Models/generator_params.j
         gp_table["Fxuv (W/m^2)"].format = "{:.3f}"
         print(gp_table)
 
-    print(f'{n_planets} generated.\n')
+    print(f'\n{n_planets} steam worlds generated.\n')
     data = np.column_stack((ids, mp_gp, rp_gp, mcore_gp, rsurf_gp, teq_gp, wmf_gp, grav_gp, H_gp, lambda_gp, sep_gp, period_gp, G_startypes, mstar_gp, lstar_gp, fxuv_gp))
     return data
 
@@ -422,10 +420,10 @@ def parallel_evo(n_planets,planet_ID,mp,rp,teq,wmf,a,mstar,lstar,datapath='./',H
 #Define complete evolution code for generated population
 def gp_xpmlevo(n_planets, planetnum,mp,rp,teq,wmf,sep,mstar,lstar,mdot_type,savepath):
 
-    if mdot_type is True:
+    if mdot_type is True or 'H2O':
         ident='H2O'
     else:
-        ident='HHe'
+        ident='H-He'
 
     #run evolution
     time_arr, mp_arr, rp_arr, wmf_arr, fxuv_arr, mdot_arr, error_arr = evolution(mp,rp,teq,wmf,sep,mstar,lstar, mdot_type)

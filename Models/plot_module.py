@@ -1,5 +1,3 @@
-#last updated: JUNE 17, 2026 on BOTH
-
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
@@ -391,8 +389,10 @@ def trails(planets_plotted, n_planets, identifier, datapath="evolution-data/", p
     plt.savefig(plotpath+'stacked_mr_trails'+identifier+'.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
-def trails_one(planets_plotted, n_planets, identifier, datapath="evolution-data/", plotpath="plots/"):
-    fig, ax = plt.figure(figsize=(7,7))#, sharex=True)
+def trails_one(planets_plotted, n_planets, datapath="data/", plotpath="plots/"):
+    fig, ax = plt.subplots(1,1, figsize=(7,5))#, sharex=True)
+
+    # fig, ax = plt.figure(figsize=(7,7))#, sharex=True)
     # fig.subplots_adjust(hspace=0) 
 
 
@@ -518,15 +518,12 @@ def trails_one(planets_plotted, n_planets, identifier, datapath="evolution-data/
     # arrays are in SI for consistency
     for i in range (planets_plotted-1):
         planetnum = i+1
-        
-        #add initial values
-        init_mp = np.append(init_mp, mp_gp[planetnum])
-        init_rp = np.append(init_rp, rp_gp[planetnum])
 
-        #H2O final values
         H2O_data = f'{datapath}/{identifier}/H2O/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
         H2O_mp_arr, H2O_rp_arr = np.loadtxt(H2O_data,usecols=(1,2),unpack=True) #,skiprows=1
 
+        init_mp = np.append(init_mp, H2O_mp_arr[0])
+        init_rp = np.append(init_rp, H2O_rp_arr[0])
         H2O_fin_mp = np.append(H2O_fin_mp, H2O_mp_arr[-1])
         H2O_fin_rp = np.append(H2O_fin_rp, H2O_rp_arr[-1])
         
@@ -534,16 +531,13 @@ def trails_one(planets_plotted, n_planets, identifier, datapath="evolution-data/
         ax.plot(H2O_mp_arr/M_e, H2O_rp_arr/R_e, c="#FFB451", linewidth=1)
 
     #last point for the legend
-    init_mp = np.append(init_mp, mp_gp[planets_plotted])
-    init_rp = np.append(init_rp, rp_gp[planets_plotted])
-
-    #H2O final values
     H2O_data = f'{datapath}/{identifier}/H2O/planet_{planets_plotted}-{n_planets}_evolution_data.csv' #imported in Earth units
     H2O_mp_arr, H2O_rp_arr = np.loadtxt(H2O_data,usecols=(1,2),unpack=True) #,skiprows=1
 
+    init_mp = np.append(init_mp, H2O_mp_arr[0])
+    init_rp = np.append(init_rp, H2O_rp_arr[0])
     H2O_fin_mp = np.append(H2O_fin_mp, H2O_mp_arr[-1])
     H2O_fin_rp = np.append(H2O_fin_rp, H2O_rp_arr[-1])
-
 
     # ------------------------------------------------ #
     #plot
@@ -555,7 +549,7 @@ def trails_one(planets_plotted, n_planets, identifier, datapath="evolution-data/
     ymax = max(H2O_fin_rp)/R_e + 0.5
     # print(max(H2O_fin_rp/R_e),max(H2O_fin_rp)/R_e)
     ax.set_title(f"Simulated Evolution: {planets_plotted} Steam Worlds")
-    ax.set(xlim=(0.25,20.25), xticklabels=[], ylim=(ymin,ymax), ylabel=r'Radius [$R_\oplus$]')
+    ax.set(xlim=(0.25,20.25), xlabel=r'Mass [$M_\oplus$]', ylim=(ymin,ymax), ylabel=r'Radius [$R_\oplus$]')
     ax.scatter(init_mp/M_e, init_rp/R_e, c='#D13242', alpha=1, s=15, edgecolor='none', zorder=50, label='Initial state')
     ax.scatter(H2O_fin_mp/M_e, H2O_fin_rp/R_e, c='#76AA27', alpha=1, s=10, edgecolor='none', zorder=30, label='Final state')
     ax.plot(list_zeng_masses,list_zeng_ea_radii,linewidth=1,color='brown',alpha=0.75,zorder=-100)#,label='Earth-like') # Earthlike
@@ -565,21 +559,23 @@ def trails_one(planets_plotted, n_planets, identifier, datapath="evolution-data/
     # ax[0].legend(title=r'$H_2O$ $\dot{M}$ (Broome et al. 2025)', loc='lower right')
     ax.legend(loc='lower right', frameon=False)
     mdot_text = 'M' + '\u0307'
-    ax.text(1,3.45, f'H\u2082O Escape Rate \n(Broome et al. 2025)', fontsize='large', weight='semibold',ha='left', va='bottom')
+    ax.text(1,3, f'H\u2082O Escape Rate \n(Broome et al. 2025)', fontsize='large', weight='semibold',ha='left', va='bottom')
 
-    plt.savefig(plotpath+'stacked_mr_trails_H2O.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
+    plt.savefig(plotpath+'mr_trails_H2O.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
 
 def kde(n_planets=5000, mdot_type='H2O', catalog='PlanetS', datapath="evolution-data/paper/",plotpath="plots/paper/"):
     import seaborn as sns
+    import swe
     M_e = 5.97237e24 #Earth mass (kg)
     R_e = 6.371e6 #Earth radius (m)
+    Gyr = 3.165e16 #s
     plt.figure(figsize=[8,6])
 
-    #constants and astronomical units
-    M_e   = 5.972e24  #Earth mass (kg)
-    R_e   = 6.371e6   #Earth radius (m)
+    # #constants and astronomical units
+    # M_e   = 5.972e24  #Earth mass (kg)
+    # R_e   = 6.371e6   #Earth radius (m)
 
     path_models='./Models/'
     xmin, xmax, nx = 0.1, 19.99999, 50 # 0.5, 20
@@ -631,17 +627,28 @@ def kde(n_planets=5000, mdot_type='H2O', catalog='PlanetS', datapath="evolution-
                                         sweet_dim_age), 
                                         sweet_data_radius, method='slinear', bounds_error=False, fill_value=fill_value)
 
-
+    def radius_m(wmf,teq,mp,age):
+        swerad = swe.radius_sweet(np.array(mp/M_e).flatten(), 
+                                    np.array(0), np.array(0), 
+                                    np.array(wmf), np.array(teq),
+                                    np.array(age/Gyr))
+        return float(swerad[0]) * R_e
+    def radius_g(wmf,teq,mp,age):
+        swerad = swe.radius_sweet(np.array(mp/M_e).flatten(), 
+                                    np.array(0), np.array(1), 
+                                    np.array(wmf), np.array(teq),
+                                    np.array(age/Gyr))
+        return float(swerad[0]) * R_e
     # The parametrized function to be plotted
-    def radius_m(x,wmf_swe,teq_swe,age_swe):
-        input0 = np.stack([x, np.full(len(x),0), np.full(len(x),0), np.full(len(x),wmf_swe), np.full(len(x),teq_swe), np.full(len(x),age_swe)],axis=-1)
-        # input0 = np.stack(0, 0, (np.full(len(x),wmf_swe),np.full(len(x),teq_swe),x,np.full(len(x),age_swe)), axis=-1)
-        return interp_sweet(input0)
+    # def radius_m(x,wmf_swe,teq_swe,age_swe):
+    #     input0 = np.stack([x, np.full(len(x),0), np.full(len(x),0), np.full(len(x),wmf_swe), np.full(len(x),teq_swe), np.full(len(x),age_swe)],axis=-1)
+    #     # input0 = np.stack(0, 0, (np.full(len(x),wmf_swe),np.full(len(x),teq_swe),x,np.full(len(x),age_swe)), axis=-1)
+    #     return interp_sweet(input0)
 
-    def radius_g(x,wmf_swe,teq_swe,age_swe):
-        input0 = np.stack([x, np.full(len(x),0), np.full(len(x),1), np.full(len(x),wmf_swe), np.full(len(x),teq_swe), np.full(len(x),age_swe)],axis=-1)
-        # input0 = np.stack(0, 1, (np.full(len(x),wmf_swe),np.full(len(x),teq_swe),x,np.full(len(x),age_swe)), axis=-1)
-        return interp_sweet(input0)
+    # def radius_g(x,wmf_swe,teq_swe,age_swe):
+    #     input0 = np.stack([x, np.full(len(x),0), np.full(len(x),1), np.full(len(x),wmf_swe), np.full(len(x),teq_swe), np.full(len(x),age_swe)],axis=-1)
+    #     # input0 = np.stack(0, 1, (np.full(len(x),wmf_swe),np.full(len(x),teq_swe),x,np.full(len(x),age_swe)), axis=-1)
+    #     return interp_sweet(input0)
 
 
     # Define initial parameters
