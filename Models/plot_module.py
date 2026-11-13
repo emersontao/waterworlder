@@ -389,7 +389,7 @@ def trails(planets_plotted, n_planets, identifier, datapath="evolution-data/", p
     plt.savefig(plotpath+'stacked_mr_trails'+identifier+'.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
-def trails_one(planets_plotted, n_planets, datapath="data/", plotpath="plots/"):
+def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", plotpath="plots/"):
     fig, ax = plt.subplots(1,1, figsize=(7,5))#, sharex=True)
 
     # fig, ax = plt.figure(figsize=(7,7))#, sharex=True)
@@ -503,15 +503,15 @@ def trails_one(planets_plotted, n_planets, datapath="data/", plotpath="plots/"):
     #create datasets for BOTH H2O and H-He
     #masses
     init_mp = np.array([])
-    H2O_fin_mp = np.array([])
+    fin_mp = np.array([])
 
     #radii
     init_rp = np.array([])
-    H2O_fin_rp = np.array([])
+    fin_rp = np.array([])
 
     identifier = f'{n_planets}_xp'
 
-    population_file = datapath + identifier + '/5000_xp_gp_data.csv'
+    population_file = datapath + identifier + f'/{n_planets}_xp_gp_data.csv'
     planetnum, mp_gp, rp_gp = np.loadtxt(population_file,skiprows=1,usecols=(0,1,2),unpack=True)
 
     # loop to import each planet's information
@@ -519,39 +519,39 @@ def trails_one(planets_plotted, n_planets, datapath="data/", plotpath="plots/"):
     for i in range (planets_plotted-1):
         planetnum = i+1
 
-        H2O_data = f'{datapath}/{identifier}/H2O/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
-        H2O_mp_arr, H2O_rp_arr = np.loadtxt(H2O_data,usecols=(1,2),unpack=True) #,skiprows=1
+        data = f'{datapath}/{identifier}/{mdot_type}/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
+        mp_arr, rp_arr = np.loadtxt(data,usecols=(1,2),unpack=True) #,skiprows=1
 
-        init_mp = np.append(init_mp, H2O_mp_arr[0])
-        init_rp = np.append(init_rp, H2O_rp_arr[0])
-        H2O_fin_mp = np.append(H2O_fin_mp, H2O_mp_arr[-1])
-        H2O_fin_rp = np.append(H2O_fin_rp, H2O_rp_arr[-1])
+        init_mp = np.append(init_mp, mp_arr[0])
+        init_rp = np.append(init_rp, rp_arr[0])
+        fin_mp = np.append(fin_mp, mp_arr[-1])
+        fin_rp = np.append(fin_rp, rp_arr[-1])
         
         #plot
-        ax.plot(H2O_mp_arr/M_e, H2O_rp_arr/R_e, c="#FFB451", linewidth=1)
+        ax.plot(mp_arr/M_e, rp_arr/R_e, c="#FFB451", linewidth=1)
 
     #last point for the legend
-    H2O_data = f'{datapath}/{identifier}/H2O/planet_{planets_plotted}-{n_planets}_evolution_data.csv' #imported in Earth units
-    H2O_mp_arr, H2O_rp_arr = np.loadtxt(H2O_data,usecols=(1,2),unpack=True) #,skiprows=1
+    data = f'{datapath}/{identifier}/{mdot_type}/planet_{planets_plotted}-{n_planets}_evolution_data.csv' #imported in Earth units
+    mp_arr, rp_arr = np.loadtxt(data,usecols=(1,2),unpack=True) #,skiprows=1
 
-    init_mp = np.append(init_mp, H2O_mp_arr[0])
-    init_rp = np.append(init_rp, H2O_rp_arr[0])
-    H2O_fin_mp = np.append(H2O_fin_mp, H2O_mp_arr[-1])
-    H2O_fin_rp = np.append(H2O_fin_rp, H2O_rp_arr[-1])
+    init_mp = np.append(init_mp, mp_arr[0])
+    init_rp = np.append(init_rp, rp_arr[0])
+    fin_mp = np.append(fin_mp, mp_arr[-1])
+    fin_rp = np.append(fin_rp, rp_arr[-1])
 
     # ------------------------------------------------ #
     #plot
-    ax.plot(H2O_mp_arr/M_e, H2O_rp_arr/R_e, c="#FFB451", linewidth=1, label="Simulated evolution")
+    ax.plot(mp_arr/M_e, rp_arr/R_e, c="#FFB451", linewidth=1, label="Simulated evolution")
 
     # -------------------------------
     #finish the plot
-    ymin = min(H2O_fin_rp)/R_e - 0.25
-    ymax = max(H2O_fin_rp)/R_e + 0.5
+    ymin = min(fin_rp)/R_e - 0.25
+    ymax = max(fin_rp)/R_e + 0.5
     # print(max(H2O_fin_rp/R_e),max(H2O_fin_rp)/R_e)
     ax.set_title(f"Simulated Evolution: {planets_plotted} Steam Worlds")
     ax.set(xlim=(0.25,20.25), xlabel=r'Mass [$M_\oplus$]', ylim=(ymin,ymax), ylabel=r'Radius [$R_\oplus$]')
     ax.scatter(init_mp/M_e, init_rp/R_e, c='#D13242', alpha=1, s=15, edgecolor='none', zorder=50, label='Initial state')
-    ax.scatter(H2O_fin_mp/M_e, H2O_fin_rp/R_e, c='#76AA27', alpha=1, s=10, edgecolor='none', zorder=30, label='Final state')
+    ax.scatter(fin_mp/M_e, fin_rp/R_e, c='#76AA27', alpha=1, s=10, edgecolor='none', zorder=30, label='Final state')
     ax.plot(list_zeng_masses,list_zeng_ea_radii,linewidth=1,color='brown',alpha=0.75,zorder=-100)#,label='Earth-like') # Earthlike
     ax.plot(list_zeng_masses,list_zeng_mg_radii,linewidth=1,color='grey',alpha=0.75,zorder=-100)#, label='100% Mantle')  # 100% Mantle
     ax.plot(x, radius_m(x,init_wmf_swe,init_teq_swe,init_age_swe),lw=0.75,color='teal',linestyle='-.',zorder=-100)#,label='50% Steam')
@@ -559,9 +559,11 @@ def trails_one(planets_plotted, n_planets, datapath="data/", plotpath="plots/"):
     # ax[0].legend(title=r'$H_2O$ $\dot{M}$ (Broome et al. 2025)', loc='lower right')
     ax.legend(loc='lower right', frameon=False)
     mdot_text = 'M' + '\u0307'
-    ax.text(1,3, f'H\u2082O Escape Rate \n(Broome et al. 2025)', fontsize='large', weight='semibold',ha='left', va='bottom')
+    
+    # ax.text(1,3, f'H\u2082O Escape Rate \n(Broome et al. 2025)', fontsize='large', weight='semibold',ha='left', va='bottom'
+    ax.text(1,3, f'{mdot_type} Escape Rate', fontsize='large', weight='semibold',ha='left', va='bottom')
 
-    plt.savefig(plotpath+'mr_trails_H2O.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
+    plt.savefig(plotpath+f'mr_trails_{mdot_type}.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
 
@@ -891,14 +893,25 @@ def kde(n_planets=5000, mdot_type='H2O', catalog='PlanetS', datapath="evolution-
     plt.savefig(plotpath + filename + '.png',bbox_inches='tight', dpi=600)
 
 
-def trails(n_planets=5000, planets_plotted=200, datapath="./evolution-data/paper/", plotpath="plots/paper"):
+def trails(n_planets=5000, planets_plotted=200, mdot_type='H2O', datapath="./evolution-data/paper/", plotpath="plots/paper"):
+    
+
+    #constants and astronomical units
+    M_e   = 5.972e24  #Earth mass (kg)
+    R_e   = 6.371e6   #Earth radius (m)
+    Gyr = 3.165e16 #s in 1
     # start plot
+
     fig, ax = plt.subplots(2,1, figsize=(7,10))#, sharex=True)
     fig.subplots_adjust(hspace=0) 
     
     FAIL = 0 #number that have less than 3 data points
     # loop to import each planet's information
     # arrays are in SI for consistency
+    init_mp = np.array([])
+    init_rp = np.array([])
+    fin_mp = np.array([])
+    fin_rp = np.array([])
 
     for i in range (planets_plotted):
         planetnum = i+1
@@ -908,20 +921,22 @@ def trails(n_planets=5000, planets_plotted=200, datapath="./evolution-data/paper
         else:
             label=None
 
-        H2O_data = f'{datapath}/{n_planets}_xp/H2O/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
-        H2O_time_arr, H2O_mp_arr, H2O_rp_arr, H2O_wmf_arr, H2O_mdot_arr = np.loadtxt(H2O_data,usecols=(0,1,2,3,4),unpack=True) #,skiprows=1
+        data = f'{datapath}/{n_planets}_xp/{mdot_type}/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
+        time_arr, mp_arr, rp_arr, wmf_arr, mdot_arr=np.loadtxt(data,usecols=(0,1,2,3,4),unpack=True) #,skiprows=1
+        # H2O_data = f'{datapath}/{n_planets}_xp/H2O/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
+        # H2O_time_arr, H2O_mp_arr, H2O_rp_arr, H2O_wmf_arr, H2O_mdot_arr = np.loadtxt(H2O_data,usecols=(0,1,2,3,4),unpack=True) #,skiprows=1
 
-        HHe_data = f'{datapath}/{n_planets}_xp/H-He/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
-        HHe_time_arr, HHe_mp_arr, HHe_rp_arr, HHe_wmf_arr, HHe_mdot_arr = np.loadtxt(HHe_data,unpack=True) #,skiprows=1
+        # HHe_data = f'{datapath}/{n_planets}_xp/H-He/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
+        # HHe_time_arr, HHe_mp_arr, HHe_rp_arr, HHe_wmf_arr, HHe_mdot_arr = np.loadtxt(HHe_data,unpack=True) #,skiprows=1
 
-        H2O_init_mp = np.append(H2O_init_mp, H2O_mp_arr[0])
-        H2O_init_rp = np.append(H2O_init_rp, H2O_rp_arr[0])
+        init_mp = np.append(init_mp, mp_arr[0])
+        init_rp = np.append(init_rp,rp_arr[0])
 
-        H2O_fin_mp = np.append(H2O_fin_mp, H2O_mp_arr[-1])
-        H2O_fin_rp = np.append(H2O_fin_rp, H2O_rp_arr[-1])
+        fin_mp = np.append(fin_mp, mp_arr[-1])
+        fin_rp = np.append(fin_rp, rp_arr[-1])
 
-        if np.isnan(HHe_mp_arr[-1]) or np.isnan(HHe_rp_arr[-1]):
-            if len(HHe_mp_arr) <3:
+        if np.isnan(mp_arr[-1]) or np.isnan(rp_arr[-1]):
+            if len(mp_arr) <3:
                 print(f"Planet {planetnum} evolution failed. {HHe_mp_arr[0]/M_e:.3f}, {HHe_rp_arr[0]/R_e:.3f}")
                 FAIL += 1
             else:

@@ -1,6 +1,6 @@
 # NASA Exoplanet Catalog
 # Source: https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name,pl_rade,pl_radeerr1,pl_radeerr2,pl_masse,pl_masseerr1,pl_masseerr2,pl_eqt+from+ps+where+default_flag=1+and+pl_controv_flag=0+and+pl_rade+is+not+null+and+pl_masse+is+not+null+and+pl_bmassprov='Mass'&format=tsv
-# Catalog last updated: 2026-11-05 18:08:54
+# Catalog last updated: 2026-11-09 14:15:25
 # pl_name	pl_rade	pl_radeerr1	pl_radeerr2	pl_masse	pl_masseerr1	pl_masseerr2	pl_eqt
 Kepler-5 b	15.98403400	0.40352400	-0.57165900	670.93913000	21.29461000	-27.33338000	1750.00
 HAT-P-7 b	16.92559000	2.35389000	-2.35389000	584.80720000	168.44990000	-168.44990000	
