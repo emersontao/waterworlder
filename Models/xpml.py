@@ -78,15 +78,19 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
             grav = (mp * G)/rp**2
             return float(wgi.mdot(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)[0])
 
-        def error(mstar,teq,fxuv,mp):
+        def error(mstar,teq,fxuv,mp,rp,a):
+            grav = (mp * G)/rp**2
             return float(wgi.error(mstar/M_sun, teq, fxuv/Fuv_e, grav, mp/M_e)[0])
 
     else:
         def solve_mdot(mstar,teq,fxuv,mp,rp,a):
             return mdot_OW17(mstar,fxuv,mp,rp,a)
         
-        def error(mstar,teq,fxuv,mp):
-            return np.nan
+        def error(mstar,teq,fxuv,mp,rp,a):
+            r_roche = rp * (2*mstar/mp)**(1.0/3.0)
+            if a <= r_roche:
+                return 1
+            return 0
 
     #Time inputs
     dt = 1e-4 * Gyr         #timestep
@@ -102,7 +106,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
     age  = time_init         #set age to initial time
     fxuv = Fxuv(age, lstar, a) # all inputs and outputs SI
     mdot = solve_mdot(mstar,teq,fxuv,mp,rp,a) #calculate first mass-loss rate, just in case
-    err = error(mstar,teq,fxuv,mp)
+    err = error(mstar,teq,fxuv,mp,rp,a)
 
     #initialize things to track
     time_saved = []
@@ -155,6 +159,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
         wmf = 1 - (mcore/mp)
         fxuv = Fxuv(age, lstar, a)
         mdot = solve_mdot(mstar, teq, fxuv, mp, rp, a) #<------------------- We solve for mdot down here because mdot depends on fxuv, which depends on time.
+        err = error(mstar,teq,fxuv,mp,rp,a)
         rp = radius(wmf, teq, mp, age) #intakes all updated parameters
 
         time_since_last_save += dt
