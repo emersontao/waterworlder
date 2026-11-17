@@ -389,7 +389,7 @@ def trails(planets_plotted, n_planets, identifier, datapath="evolution-data/", p
     plt.savefig(plotpath+'stacked_mr_trails'+identifier+'.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
-def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", plotpath="plots/"):
+def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", plotpath="plots/", show_err=False):
     fig, ax = plt.subplots(1,1, figsize=(7,5))#, sharex=True)
 
     # fig, ax = plt.figure(figsize=(7,7))#, sharex=True)
@@ -520,15 +520,18 @@ def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", p
         planetnum = i+1
 
         data = f'{datapath}/{identifier}/{mdot_type}/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
-        mp_arr, rp_arr = np.loadtxt(data,usecols=(1,2),unpack=True) #,skiprows=1
+        mp_arr, rp_arr, err_arr = np.loadtxt(data,usecols=(1,2,6),unpack=True) #,skiprows=1
 
         init_mp = np.append(init_mp, mp_arr[0])
         init_rp = np.append(init_rp, rp_arr[0])
         fin_mp = np.append(fin_mp, mp_arr[-1])
         fin_rp = np.append(fin_rp, rp_arr[-1])
+
+        mask_err = (err_arr > 0)
         
         #plot
         ax.plot(mp_arr/M_e, rp_arr/R_e, c="#FFB451", linewidth=1)
+        if show_err: ax.scatter(mp_arr[mask_err]/M_e, rp_arr[mask_err]/R_e, c="#FFB451", marker="x",s=5)
 
     #last point for the legend
     data = f'{datapath}/{identifier}/{mdot_type}/planet_{planets_plotted}-{n_planets}_evolution_data.csv' #imported in Earth units
