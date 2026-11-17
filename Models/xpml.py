@@ -9,6 +9,7 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import swe
 import windae_grid_interpolate as wgi
+import copy
 
 #Constants
 M_e   = 5.972e24  #Earth mass (kg)
@@ -107,6 +108,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
     fxuv = Fxuv(age, lstar, a) # all inputs and outputs SI
     mdot = solve_mdot(mstar,teq,fxuv,mp,rp,a) #calculate first mass-loss rate, just in case
     err = error(mstar,teq,fxuv,mp,rp,a)
+    mdot_old = copy.deepcopy(mdot) # if we don't make a deepcopy, mdot_old simply holds the adress of mdot
 
     #initialize things to track
     time_saved = []
@@ -126,31 +128,33 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
     mdot_saved.append(float(mdot))
     err_saved.append(float(err))
     
-
     while age < time_end:
-        #Calculate mass-loss rate
-        mdot_old = mdot
-
         #update timestep
         dtmin = (mp / mdot_old) * 1e-16 #<-------------------------------- !!!! CHANGED: USES mdot_old INSTEAD OF CALCULATING NEW.
+        dtmin = max(dtmin,age * 1e-16) # double precision on age, otherwise age not incremented
         if age > time_init:
             np.seterr(divide='ignore') #ignore the divide by 0 errors
-            dtmax = ( 2 * mp ) / np.abs(mdot - mdot_old)
+            dtmax = ( 2 * mp ) / (np.abs(mdot - mdot_old) + 1e-16*np.abs(mdot_old)) # added epsilon to denominator in case identical values
             dt = 10**(0.5 * (np.log10(dtmin)) + 0.5*np.log10(dtmax))
             dt = min(dt,0.5*dt_save)     #stops dt > time_step_save         
         else:
-            dt = 10**(0.5 * (np.log10(dtmin)))
+            dt = dtmin #10**(0.5 * (np.log10(dtmin)))
 
         # Possible conditions that would end the loop
         if (dt + age) > time_end:
             dt = time_end - age #ensures the last possible step is 5 Gyr
 
-        if (1 - (mcore/(mp - mdot_old*dt))) < 0.001:  #<------------------- !!!! CHANGED: USES mdot_old INSTEAD OF CALCULATING NEW.
+        # Case where mdot would blow away all remaining water
+        if (1 - (mcore/(mp - mdot*dt))) < 0.001:  #<------------------- !!!! CHANGED: USES mdot_old INSTEAD OF CALCULATING NEW.
             dt_new = mp*wmf/mdot
             age += dt_new
             mp = mp - mdot*dt_new
             wmf = 0     #1 - (mcore/mp)
+            fxuv = Fxuv(age, lstar, a)
             rp = float(swe.zeng_radius(mcore/M_e, 0.325)) #assume an earth-like core
+            mdot_old = copy.deepcopy(mdot)
+            mdot = solve_mdot(mstar, teq, fxuv, mp, rp, a) #<------------------- We solve for mdot down here because mdot depends on fxuv, which depends on time.
+            err = error(mstar,teq,fxuv,mp,rp,a)
             break
 
         # Update state
@@ -158,10 +162,13 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
         mp -= mdot*dt
         wmf = 1 - (mcore/mp)
         fxuv = Fxuv(age, lstar, a)
+        rp = radius(wmf, teq, mp, age) #intakes all updated parameters
+        mdot_old = copy.deepcopy(mdot)
         mdot = solve_mdot(mstar, teq, fxuv, mp, rp, a) #<------------------- We solve for mdot down here because mdot depends on fxuv, which depends on time.
         err = error(mstar,teq,fxuv,mp,rp,a)
-        rp = radius(wmf, teq, mp, age) #intakes all updated parameters
-
+        # print(age,mp,rp,wmf,fxuv,mdot,err)
+        # exit()
+        
         time_since_last_save += dt
 
         if any(x <= 0 for x in [mp, rp, mdot]):
