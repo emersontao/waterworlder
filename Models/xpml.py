@@ -145,7 +145,12 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
             dt = time_end - age #ensures the last possible step is 5 Gyr
 
         # Case where mdot would blow away all remaining water
-        if (1 - (mcore/(mp - mdot*dt))) < 0.001:  #<------------------- !!!! CHANGED: USES mdot_old INSTEAD OF CALCULATING NEW.
+        wmf_new = 1 - mcore/(mp - mdot*dt)
+        # Also need to handle the case where mdot so strong that it blows away the whole planet
+        # this case produces a bug because wmf_new involves the ratio of 2 numbers that could be negative together
+        # which would avoid the loop below
+        mp_new = mp - mdot*dt 
+        if (1 - (mcore/(mp - mdot*dt))) < 0.001 or mp_new < 0:  #<------------------- !!!! CHANGED: USES mdot_old INSTEAD OF CALCULATING NEW.
             dt_new = mp*wmf/mdot
             age += dt_new
             mp = mp - mdot*dt_new
