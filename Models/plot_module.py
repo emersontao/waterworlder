@@ -389,7 +389,7 @@ def trails(planets_plotted, n_planets, identifier, datapath="evolution-data/", p
     plt.savefig(plotpath+'stacked_mr_trails'+identifier+'.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
-def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", plotpath="plots/", show_err=False):
+def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", plotpath="plots/", show_err=False, skip_err=False,fname_label=''):
     fig, ax = plt.subplots(1,1, figsize=(7,5))#, sharex=True)
 
     # fig, ax = plt.figure(figsize=(7,7))#, sharex=True)
@@ -516,25 +516,42 @@ def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", p
 
     # loop to import each planet's information
     # arrays are in SI for consistency
-    for i in range (planets_plotted-1):
-        planetnum = i+1
+    # if skip_err=True, a planet where mdot has errors will be skipped
+    cnt_plotted = 0
+    planetnum = 1
+    # for i in range (planets_plotted-1):
+    while cnt_plotted < planets_plotted:
+    
+        # planetnum = i+1
 
         data = f'{datapath}/{identifier}/{mdot_type}/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
         mp_arr, rp_arr, err_arr = np.loadtxt(data,usecols=(1,2,6),unpack=True) #,skiprows=1
 
-        init_mp = np.append(init_mp, mp_arr[0])
-        init_rp = np.append(init_rp, rp_arr[0])
-        fin_mp = np.append(fin_mp, mp_arr[-1])
-        fin_rp = np.append(fin_rp, rp_arr[-1])
-
+        # mask knowing where the evolution curve has errors
         mask_err = (err_arr > 0)
+
+        # if we asked to skip a planet with errors and there are errors, continue to next planet
+        if mask_err.sum() > 0 and skip_err:
+            planetnum += 1
+            continue
         
         #plot
         ax.plot(mp_arr/M_e, rp_arr/R_e, c="#FFB451", linewidth=1)
         if show_err: ax.scatter(mp_arr[mask_err]/M_e, rp_arr[mask_err]/R_e, c="#FFB451", marker="x",s=5)
 
+        # save first and last
+        init_mp = np.append(init_mp, mp_arr[0])
+        init_rp = np.append(init_rp, rp_arr[0])
+        fin_mp = np.append(fin_mp, mp_arr[-1])
+        fin_rp = np.append(fin_rp, rp_arr[-1])
+
+        planetnum += 1
+        cnt_plotted += 1
+
+    print(f"Skipped {planetnum-1-cnt_plotted}")
     #last point for the legend
-    data = f'{datapath}/{identifier}/{mdot_type}/planet_{planets_plotted}-{n_planets}_evolution_data.csv' #imported in Earth units
+    planetnum -= 1 # the last loop increments planetnum, so to duplicate last planet we need to decrement
+    data = f'{datapath}/{identifier}/{mdot_type}/planet_{planetnum}-{n_planets}_evolution_data.csv' #imported in Earth units
     mp_arr, rp_arr = np.loadtxt(data,usecols=(1,2),unpack=True) #,skiprows=1
 
     init_mp = np.append(init_mp, mp_arr[0])
@@ -549,7 +566,7 @@ def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", p
     # -------------------------------
     #finish the plot
     ymin = min(fin_rp)/R_e - 0.25
-    ymax = max(fin_rp)/R_e + 0.5
+    ymax = max(init_rp)/R_e + 0.5
     # print(max(H2O_fin_rp/R_e),max(H2O_fin_rp)/R_e)
     ax.set_title(f"Simulated Evolution: {planets_plotted} Steam Worlds")
     ax.set(xlim=(0.25,20.25), xlabel=r'Mass [$M_\oplus$]', ylim=(ymin,ymax), ylabel=r'Radius [$R_\oplus$]')
@@ -564,9 +581,9 @@ def trails_one(planets_plotted, n_planets, mdot_type='H-He', datapath="data/", p
     mdot_text = 'M' + '\u0307'
     
     # ax.text(1,3, f'H\u2082O Escape Rate \n(Broome et al. 2025)', fontsize='large', weight='semibold',ha='left', va='bottom'
-    ax.text(1,3, f'{mdot_type} Escape Rate', fontsize='large', weight='semibold',ha='left', va='bottom')
+    ax.text(0.05,0.85, f'{mdot_type} Escape Rate', fontsize='large', weight='semibold',ha='left', va='bottom', transform=ax.transAxes)
 
-    plt.savefig(plotpath+f'mr_trails_{mdot_type}.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
+    plt.savefig(plotpath+f'mr_trails_{mdot_type}{fname_label}.png', bbox_inches='tight', pad_inches=0.5, dpi=600)
 
 
 
