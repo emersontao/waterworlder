@@ -19,7 +19,7 @@ df.columns = df.columns.str.strip()
 
 print(df.keys())
 # Simple error handling method: the errorcode is the sum of all errors
-df["error"] = np.abs(df["flag_roche"])+np.abs(df["flag_exception"])+np.abs(df["flag_ramp_to"])+np.abs(df["flag_run_wind"])+np.abs(df["flag_timeout"])
+df["error"] = np.abs(df["flag_roche"])+np.abs(df["flag_exception"])+np.abs(df["flag_ramp_to"])+np.abs(df["flag_run_wind"])+np.abs(df["flag_timeout"])+np.abs(df["flag_postfacto"])
 
 # Easier for the interpolator: sort all input in scending order
 list_labels = ['Mstar', 'Teq', 'Fxuv', 'grav', 'Mp']
