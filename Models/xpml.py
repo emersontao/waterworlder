@@ -135,7 +135,7 @@ def evolution(mp, rp, teq, wmf, a, mstar, lstar, H2O=True, time_init=1e-3*Gyr, t
         if age > time_init:
             np.seterr(divide='ignore') #ignore the divide by 0 errors
             dtmax = ( 2 * mp ) / (np.abs(mdot - mdot_old) + 1e-16*np.abs(mdot_old)) # added epsilon to denominator in case identical values
-            dt = 10**(0.5 * (np.log10(dtmin)) + 0.5*np.log10(dtmax))
+            dt = 10**(0.3 * (np.log10(dtmin)) + 0.7*np.log10(dtmax))
             dt = min(dt,0.5*dt_save)     #stops dt > time_step_save         
         else:
             dt = dtmin #10**(0.5 * (np.log10(dtmin)))
